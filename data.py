@@ -3,6 +3,10 @@ import pandas as pd
 import random
 import ast
 
+from utils.tokeniser import Tokeniser
+
+# You should run this once wuth fromHuggingFace true
+#  so that it gets downloaded to the data folder
 def load_data_as_df(fromHuggingFace=False):
     if fromHuggingFace:
         ds = load_dataset("microsoft/ms_marco", "v1.1")
@@ -27,7 +31,7 @@ def get_random_docs(n, df):
         random_row = df.sample(n=1)
         docs = random_row["passage_text"].values[0]
         random_doc = random.sample(docs, 1)
-        result.append(random_doc)
+        result.append(random_doc[0])
     return result
 
 # Returns a tuple of (query, positive_docs, negative_docs)
@@ -39,5 +43,14 @@ def get_training_data():
     neg_docs = get_random_docs(len(pos_docs), df)
     return (query, pos_docs, neg_docs)
 
-triple = get_training_data()
-print(triple)
+# Returns a tuple of (query, positive_docs, negative_docs)
+def get_training_data_tokenised():
+    (query, pos, neg) = get_training_data()
+    tokeniser = Tokeniser()
+    query_tokens = tokeniser.tokenise(query)
+    pos_tokens = [tokeniser.tokenise(doc) for doc in pos]
+    neg_tokens = [tokeniser.tokenise(doc) for doc in neg]
+    return (query_tokens, pos_tokens, neg_tokens)
+
+# triple = get_training_data_tokenised()
+# print(triple)
