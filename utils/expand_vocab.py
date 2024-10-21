@@ -4,6 +4,8 @@ from collections import Counter
 from tqdm import tqdm
 import pandas as pd
 
+NEW_COUNT_THRESHOLD = 5
+
 
 def preprocess_text(text: str) -> list[str]:
     text = text.lower()
@@ -48,4 +50,17 @@ if __name__ == "__main__":
 
     print("Counting words")
     word_counts = Counter(words)
+
+    limited_word_counts = set(
+        [word for word in word_counts if word_counts[word] > NEW_COUNT_THRESHOLD]
+    )
+
+    old_vocab = set(word_to_id_base)
+
+    diff_vocab = limited_word_counts.difference(old_vocab)
+
+    new_word_to_id = {
+        word: id for id, word in enumerate(diff_vocab, start=len(old_vocab))
+    }
+
     pass
