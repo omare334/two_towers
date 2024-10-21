@@ -34,6 +34,20 @@ class Tokeniser:
 
 
 if __name__ == "__main__":
-    tokeniser = Tokeniser("lookup.pkl")
+    tokeniser = Tokeniser("utils/lookup.pkl")
 
-    print(tokeniser.tokenise("King Queen the"))
+    demo_text = (
+        "Background. Metabolic acidosis is a clinical "
+        "disturbance characterized by an increase in plasma acidity. "
+        "Metabolic acidosis should be considered a sign of an "
+        "underlying disease process. Identification of this underlying "
+        "condition is essential to initiate appropriate therapy. "
+        "Metabolic acidosis is a primary decrease in serum HCO 3. Rarely, "
+        "metabolic acidosis can be part of a mixed or complex acid-base "
+        "disturbance in which 2 or more separate metabolic or respiratory "
+        "derangements occur together. In these instances, pH may not be "
+        "reduced or the HCO 3 - concentration may not be low."
+    )
+    tokens = tokeniser.tokenise(demo_text)
+
+    print(tokens)
