@@ -26,7 +26,7 @@ def preprocess_text(text: str) -> list[str]:
 if __name__ == "__main__":
     lookup_pkl_path = "utils/lookup.pkl"
     with open(lookup_pkl_path, "rb") as f:
-        word_to_id_base, id_to_word_base = pickle.load(f)
+        words_to_ids, ids_to_words = pickle.load(f)
 
     dataset = datasets.load_dataset("microsoft/ms_marco", "v1.1")
 
@@ -35,10 +35,10 @@ if __name__ == "__main__":
 
     for split in splits:
 
-        queries = dataset[split]["query"]
+        queries = dataset[split]["query"][:1000]
         text_corpus_list.append(" ".join(queries))
 
-        passages = dataset[split]["passages"]
+        passages = dataset[split]["passages"][:1000]
         for passage in tqdm(passages, desc=split + " passages"):
             x = " ".join(passage["passage_text"])
             text_corpus_list.append(" ".join(passage["passage_text"]))
@@ -55,12 +55,19 @@ if __name__ == "__main__":
         [word for word in word_counts if word_counts[word] > NEW_COUNT_THRESHOLD]
     )
 
-    old_vocab = set(word_to_id_base)
+    old_vocab = set(words_to_ids)
 
     diff_vocab = limited_word_counts.difference(old_vocab)
 
     new_word_to_id = {
         word: id for id, word in enumerate(diff_vocab, start=len(old_vocab))
     }
+    new_id_to_word = {id: word for word, id in new_word_to_id.items()}
 
-    pass
+    words_to_ids.update(new_word_to_id)
+    ids_to_words.update(new_id_to_word)
+
+    dataset = (words_to_ids, ids_to_words)
+
+    with open("utils/lookup_updated.pkl", "wb") as f:
+        pickle.dump(dataset, f)
