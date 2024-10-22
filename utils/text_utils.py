@@ -1,6 +1,7 @@
 from collections import Counter
+import re
 
-NEW_COUNT_THRESHOLD = 5
+NEW_COUNT_THRESHOLD = 25
 
 
 def preprocess_text(text: str) -> list[str]:
@@ -16,6 +17,8 @@ def preprocess_text(text: str) -> list[str]:
     text = text.replace("--", " <HYPHENS> ")
     text = text.replace("?", " <QUESTION_MARK> ")
     text = text.replace(":", " <COLON> ")
+    pattern = r"[^a-zA-Z0-9<>\s]"
+    text = re.sub(string=text, pattern=pattern, repl="")
     words = text.split()
     stats = Counter(words)
     words = [word for word in words if stats[word] > NEW_COUNT_THRESHOLD]

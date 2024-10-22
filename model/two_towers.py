@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-from rnn import RNN_model
 from w2v_model import Word2Vec
 from typing import TypeAlias
 
@@ -8,7 +7,7 @@ Token: TypeAlias = int
 
 
 class TwoTowers(nn.Module):
-    def __init__(self, vocab_size, token_embed_dims, query_embed_dim, rnn_layer_num=2):
+    def __init__(self, vocab_size, token_embed_dims, encoded_dim, rnn_layer_num=1):
         super().__init__()
         self.embed = nn.Embedding(
             num_embeddings=vocab_size, embedding_dim=token_embed_dims
@@ -17,13 +16,13 @@ class TwoTowers(nn.Module):
         # Linear are just placeholders
         self.query_rnn = nn.RNN(
             input_size=token_embed_dims,
-            hidden_size=query_embed_dim,
+            hidden_size=encoded_dim,
             num_layers=rnn_layer_num,
             batch_first=True,
         )
         self.doc_rnn = nn.RNN(
             input_size=token_embed_dims,
-            hidden_size=query_embed_dim,
+            hidden_size=encoded_dim,
             num_layers=rnn_layer_num,
             batch_first=True,
         )
@@ -63,9 +62,9 @@ class TwoTowers(nn.Module):
 
         query_embed = self.embed(query_tkns)
         pos_embed = self.embed(pos_tkns)
-        neg_embed = self.embed(pos_tkns)
+        neg_embed = self.embed(neg_tkns)
 
         _, query_rnn_embed = self.query_rnn(query_embed)
         _, pos_rnn_embed = self.doc_rnn(pos_embed)
-        _, neg_rnn_embed = self.doc_rnn(pos_embed)
+        _, neg_rnn_embed = self.doc_rnn(neg_embed)
         return self.triplet_loss_single(query_rnn_embed, pos_rnn_embed, neg_rnn_embed)
