@@ -2,26 +2,11 @@ import pickle
 import datasets
 from collections import Counter
 from tqdm import tqdm
-import pandas as pd
-
-NEW_COUNT_THRESHOLD = 5
+from text_utils import preprocess_text, NEW_COUNT_THRESHOLD
 
 
-def preprocess_text(text: str) -> list[str]:
-    text = text.lower()
-    text = text.replace(".", " <PERIOD> ")
-    text = text.replace(",", " <COMMA> ")
-    text = text.replace('"', " <QUOTATION_MARK> ")
-    text = text.replace(";", " <SEMICOLON> ")
-    text = text.replace("!", " <EXCLAMATION_MARK> ")
-    text = text.replace("?", " <QUESTION_MARK> ")
-    text = text.replace("(", " <LEFT_PAREN> ")
-    text = text.replace(")", " <RIGHT_PAREN> ")
-    text = text.replace("--", " <HYPHENS> ")
-    text = text.replace("?", " <QUESTION_MARK> ")
-    text = text.replace(":", " <COLON> ")
-    return text.split()
-
+words_to_ids: dict[str, int] = {}
+ids_to_words: dict[int, str] = {}
 
 if __name__ == "__main__":
     lookup_pkl_path = "utils/lookup.pkl"
