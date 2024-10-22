@@ -43,9 +43,8 @@ dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle
 print("Loaded dataset")
 
 
-for epoch in range(500):
-    prgs = tqdm(dataloader, desc=f"Epoch {epoch+1}")
-
+for epoch in range(start_epoch + 1, start_epoch + 501):
+    prgs = tqdm(dataloader, desc=f"Epoch {epoch}")
     for inputs, targets, negs in prgs:
         inputs, targets, negs = inputs.to(device), targets.to(device), negs.to(device)
         optimizer.zero_grad()
@@ -56,8 +55,19 @@ for epoch in range(500):
 
         optimizer.step()
         wandb.log({"loss": loss.item()})
-
     if not (epoch + 1) % 5:
-        save_path = f"checkpoints/w2v_epoch_{epoch+1}.pth"
-        torch.save(model.state_dict(), save_path)
+        # save_path = f"checkpoints/w2v_epoch_{epoch+1}.pth"
+        checkpoint_dir = Path("artifacts/w2v-marco")
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+        checkpoint_path = checkpoint_dir / "model.pth"
+
+        artifact = wandb.Artifact
+        torch.save(model.state_dict(), checkpoint_path)
+        new_artifact = wandb.Artifact(
+            "w2v-marco",
+            type="model",
+            metadata={"epoch": 0, "vocab_size": vocab_size, "embed_dim": EMBED_DIM},
+        )
+        new_artifact.add_file(checkpoint_path)
+        wandb.log_artifact(new_artifact)
 wandb.finish()
