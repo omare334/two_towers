@@ -4,6 +4,8 @@ import torch.nn as nn
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+EMBED_DIM = 50
+
 
 class Word2Vec(nn.Module):
     def __init__(self, embedding_dim, vocab_size):
