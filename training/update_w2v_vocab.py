@@ -40,9 +40,14 @@ wandb.finish()
 wandb.init(project="word2vec-marco")
 new_model = Word2Vec(EMBED_DIM, new_vocab_size)
 
-new_model.center_embed.weight[:old_vocab_size] = old_model.center_embed.weight
+with torch.no_grad():
+    new_model.center_embed.weight[:old_vocab_size] = old_model.center_embed.weight
 
-new_save_path = Path("checkpoints") / "model.pth"
+new_save_dir = Path("checkpoints")
+
+new_save_dir.mkdir(parents=True, exist_ok=True)
+
+new_save_path = new_save_dir / "model.pth"
 torch.save(new_model.state_dict(), new_save_path)
 new_artifact = wandb.Artifact(
     "w2v-marco",
