@@ -1,9 +1,10 @@
 from collections import Counter
+from typing import List
 
 NEW_COUNT_THRESHOLD = 5
 
 
-def preprocess_text(text: str) -> list[str]:
+def preprocess_text(text: str) -> List[str]:
     text = text.lower()
     text = text.replace(".", " <PERIOD> ")
     text = text.replace(",", " <COMMA> ")

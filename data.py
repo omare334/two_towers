@@ -22,7 +22,7 @@ def load_data_as_df(fromHuggingFace=False):
 
 # Returns a dataframe with columns "passage_text" and "query"
 def get_ms_marco_data():
-    df = load_data_as_df()
+    df = load_data_as_df(True)
     print("Processing passages and queries")
     df['passages'] = df['passages'].apply(ast.literal_eval)
     df["passage_text"] = df["passages"].apply(lambda x: x["passage_text"])

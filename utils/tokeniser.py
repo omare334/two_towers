@@ -1,4 +1,5 @@
 import pickle
+from typing import List
 
 
 class Tokeniser:
@@ -9,7 +10,7 @@ class Tokeniser:
         self.id_to_word = id_to_word
         self.default_token = 0
 
-    def tokenise(self, text: str) -> list[int]:
+    def tokenise(self, text: str) -> List[int]:
         split = self._preprocess(text)
         tokens = [
             self.word_to_id[word] if word in self.word_to_id else self.default_token
@@ -17,7 +18,7 @@ class Tokeniser:
         ]
         return tokens
 
-    def _preprocess(self, text: str) -> list[str]:
+    def _preprocess(self, text: str) -> List[str]:
         text = text.lower()
         text = text.replace(".", " <PERIOD> ")
         text = text.replace(",", " <COMMA> ")

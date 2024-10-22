@@ -3,10 +3,10 @@ import datasets
 from collections import Counter
 from tqdm import tqdm
 from text_utils import preprocess_text, NEW_COUNT_THRESHOLD
+from typing import Dict
 
-
-words_to_ids: dict[str, int] = {}
-ids_to_words: dict[int, str] = {}
+words_to_ids: Dict[str, int] = {}
+ids_to_words: Dict[int, str] = {}
 
 if __name__ == "__main__":
     lookup_pkl_path = "utils/lookup.pkl"

@@ -1,11 +1,12 @@
 import collections
 import pickle
+from typing import List, Dict, Tuple
 
 with open("dataset/text8/text8") as f:
     text8: str = f.read()
 
 
-def preprocess(text: str) -> list[str]:
+def preprocess(text: str) -> List[str]:
     text = text.lower()
     text = text.replace(".", " <PERIOD> ")
     text = text.replace(",", " <COMMA> ")
@@ -24,10 +25,10 @@ def preprocess(text: str) -> list[str]:
     return words
 
 
-corpus: list[str] = preprocess(text8)
+corpus: List[str] = preprocess(text8)
 
 
-def create_lookup_tables(words: list[str]) -> tuple[dict[str, int], dict[int, str]]:
+def create_lookup_tables(words: List[str]) -> Tuple[Dict[str, int], Dict[int, str]]:
     word_counts = collections.Counter(words)
     vocab = sorted(word_counts, key=lambda k: word_counts.get(k), reverse=True)
     int_to_vocab = {ii + 1: word for ii, word in enumerate(vocab)}

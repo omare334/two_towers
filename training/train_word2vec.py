@@ -24,6 +24,11 @@ print("Init model...")
 embed_dim = 50
 model = Word2Vec(embed_dim, len(words_to_ids)).to(device)
 
+old_model = Word2Vec(50,50000)
+new_model = Word2Vec(50,60000)
+
+new_model.center_embed.weight[:50000] = old_model.center_embed.weights
+
 model_path = "checkpoints/w2v_epoch_15.pth"
 model.load_state_dict(torch.load(model_path, weights_only=True))
 
