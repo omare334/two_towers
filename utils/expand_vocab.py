@@ -20,10 +20,10 @@ if __name__ == "__main__":
 
     for split in splits:
 
-        queries = dataset[split]["query"][:1000]
+        queries = dataset[split]["query"]
         text_corpus_list.append(" ".join(queries))
 
-        passages = dataset[split]["passages"][:1000]
+        passages = dataset[split]["passages"]
         for passage in tqdm(passages, desc=split + " passages"):
             x = " ".join(passage["passage_text"])
             text_corpus_list.append(" ".join(passage["passage_text"]))
