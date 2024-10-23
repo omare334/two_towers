@@ -2,7 +2,7 @@ import pickle
 import datasets
 from collections import Counter
 from tqdm import tqdm
-from text_utils import preprocess_text, NEW_COUNT_THRESHOLD
+from text_utils import preprocess_text_threshold, NEW_COUNT_THRESHOLD
 
 
 words_to_ids: dict[str, int] = {}
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     text_corpus = " ".join(text_corpus_list)
     # pass
     print("Processing text")
-    words = preprocess_text(text_corpus)
+    words = preprocess_text_threshold(text_corpus)
 
     print("Counting words")
     word_counts = Counter(words)
