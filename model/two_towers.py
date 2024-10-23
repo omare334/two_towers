@@ -31,7 +31,7 @@ class TwoTowers(nn.Module):
             batch_first=True,
         )
         self.triplet_loss = nn.TripletMarginWithDistanceLoss(
-            distance_function=self.dist_function_single
+            distance_function=self.dist_function_single, reduction="mean"
         )
 
     def dist_function_single(self, query, sample):
@@ -109,7 +109,7 @@ class TwoTowers(nn.Module):
 if __name__ == "__main__":
     model = TwoTowers(200, 10, 20)
 
-    batch_num = 2
+    batch_num = 20
 
     que_list = [
         torch.randint(0, 200, [torch.randint(5, 15, ())]) for _ in range(batch_num)
