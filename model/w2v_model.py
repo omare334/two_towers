@@ -16,7 +16,7 @@ class Word2Vec(nn.Module):
         self.loss = nn.BCEWithLogitsLoss()
 
     def get_loss(self, inpt, trgs, rand):
-        emb = self.center_embed(inpt)
+        emb: torch.Tensor = self.center_embed(inpt)
 
         ctx = self.context_projection_embed(trgs)
         neg = self.context_projection_embed(rand)

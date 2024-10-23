@@ -1,9 +1,12 @@
 import torch
 import torch.nn as nn
+from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 from w2v_model import Word2Vec
-from typing import TypeAlias
 
-Token: TypeAlias = int
+# from typing import TypeAlias
+
+type Token = int
+type Sequence = list[Token]
 
 
 class TwoTowers(nn.Module):
@@ -39,16 +42,37 @@ class TwoTowers(nn.Module):
 
     def get_loss_batch(
         self,
-        query_tkns: list[list[int]],
-        positive_tkns: list[list[list[int]]],
-        negative_tkns: list[list[list[int]]],
+        query_tkns: list[Sequence],
+        positive_tkns: list[Sequence],
+        negative_tkns: list[Sequence],
     ):
         # Expected shapes:
         # L - length of query/doc in tokens
         # b - number of batches
         # s - samples per query (both pos and neg)
         # query_tkns [b, L]
-        pass
+        query_lengths = [len(seq) for seq in query_tkns]
+        padded_query_tkns = pad_sequence(query_tkns, True)
+
+        pos_lengths = [len(seq) for seq in positive_tkns]
+        padded_pos_tkns = pad_sequence(positive_tkns, True)
+
+        neg_lengths = [len(seq) for seq in negative_tkns]
+        padded_neg_tkns = pad_sequence(negative_tkns, True)
+
+        padded_query_embeds = self.embed(padded_query_tkns)
+        padded_pos_embeds = self.embed(padded_pos_tkns)
+        padded_neg_embeds = self.embed(padded_neg_tkns)
+
+        packed_query_embeds = pack_padded_sequence(
+            padded_query_embeds, query_lengths, batch_first=True, enforce_sorted=False
+        )
+        packed_pos_embeds = pack_padded_sequence(
+            padded_pos_embeds, pos_lengths, batch_first=True, enforce_sorted=False
+        )
+        packed_neg_embeds = pack_padded_sequence(
+            padded_neg_embeds, neg_lengths, batch_first=True, enforce_sorted=False
+        )
 
     def get_loss_single(
         self,
