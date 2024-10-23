@@ -17,7 +17,7 @@ from utils.two_tower_dataset import TwoTowerDataset, collate_fn
 device = "cuda" if torch.cuda.is_available() else "cpu"
 map_location = torch.device(device)
 
-BATCH_SIZE = 50
+BATCH_SIZE = 10_000
 
 two_tower_project = "two-towers-marco"
 wandb.init(project=two_tower_project)
@@ -42,7 +42,7 @@ print("Model pulled")
 optimizer = optim.Adam(model.parameters(), lr=0.005)
 
 print("Loading dataset")
-dataset_path = Path("dataset/two_tower/big.pkl")
+dataset_path = Path("dataset/two_tower/train")
 with open(dataset_path, "rb") as f:
     data = pickle.load(f)
 print("Loaded dataset")

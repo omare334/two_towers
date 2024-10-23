@@ -53,19 +53,23 @@ class TwoTowers(nn.Module):
         negative_tkns: list[Sequence],
     ):
         # Shape [N]
-        query_lengths = torch.tensor(
-            [len(seq) for seq in query_tkns], dtype=torch.long, device=device
-        )
+        query_lengths = torch.tensor([len(seq) for seq in query_tkns], dtype=torch.long)
         pos_lengths = torch.tensor(
-            [len(seq) for seq in positive_tkns], dtype=torch.long, device=device
+            [len(seq) for seq in positive_tkns], dtype=torch.long
         )
         neg_lengths = torch.tensor(
-            [len(seq) for seq in negative_tkns], dtype=torch.long, device=device
+            [len(seq) for seq in negative_tkns], dtype=torch.long
         )
 
-        query_tkns = [torch.tensor(q) for q in query_tkns]
-        positive_tkns = [torch.tensor(p) for p in positive_tkns]
-        negative_tkns = [torch.tensor(n) for n in negative_tkns]
+        query_tkns = [
+            torch.tensor(q, dtype=torch.long, device=device) for q in query_tkns
+        ]
+        positive_tkns = [
+            torch.tensor(p, dtype=torch.long, device=device) for p in positive_tkns
+        ]
+        negative_tkns = [
+            torch.tensor(n, dtype=torch.long, device=device) for n in negative_tkns
+        ]
 
         # Shape [N, Lmax] (for each)
         padded_query_tkns = pad_sequence(query_tkns, batch_first=True)

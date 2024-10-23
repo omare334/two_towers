@@ -5,8 +5,8 @@ from pathlib import Path
 from tokeniser import Tokeniser
 from random import randrange
 
-DATASET_FILEPATH = Path("dataset/two_tower/big.pkl")
-DATASET_FILEPATH.parent.mkdir(parents=True, exist_ok=True)
+DATASET_FILEPATH = Path("dataset/two_tower")
+DATASET_FILEPATH.mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == "__main__":
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     tknz = tokeniser.tokenise_string
     dataset = datasets.load_dataset("microsoft/ms_marco", "v1.1")
 
-    splits = ["train", "test", "validation"]
+    splits = ["test", "validation", "train"]
     all_documents: set[str] = set()
 
     for split in splits:
@@ -26,9 +26,8 @@ if __name__ == "__main__":
     all_documents = list(all_documents)
     internet_length = len(all_documents)
 
-    all_data = []
-
     for split in splits:
+        split_data = []
 
         rows = tqdm(
             enumerate(dataset[split]),
@@ -46,7 +45,7 @@ if __name__ == "__main__":
                 )
                 for sample in pos_samples
             ]
-            all_data.extend(data)
+            split_data.extend(data)
 
-    with open(DATASET_FILEPATH, "wb") as f:
-        pickle.dump(all_data, f)
+        with open(DATASET_FILEPATH / split, "wb") as f:
+            pickle.dump(split_data, f)
