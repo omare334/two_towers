@@ -48,5 +48,7 @@ if __name__ == "__main__":
             ]
             all_data.extend(data)
 
+    queries, pos_samples, neg_samples = map(list,zip(*all_data))
+    pass
     with open(DATASET_FILEPATH, "wb") as f:
-        pickle.dump(all_data, f)
+        pickle.dump((queries, pos_samples, neg_samples), f)

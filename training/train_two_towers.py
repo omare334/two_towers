@@ -1,94 +1,76 @@
 import pickle
 from pathlib import Path
-import math
 
 import torch
 import torch.optim as optim
 import wandb
 from tqdm import tqdm
 
-import more_itertools
-from model.w2v_model import Word2Vec, EMBED_DIM
+from model.two_towers import TwoTowers
+from utils.two_tower_dataset import TwoTowerDataset
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+map_location = torch.device(device)
 
-BATCH_SIZE = 500_000
+BATCH_SIZE = 50
 
-# wandb_project = "word2vec-marco"
-# wandb.init(project=wandb_project)
-# print("Pulling model")
-# start_checkpoint_artifact = wandb.use_artifact("w2v-marco:latest", type="model")
-# artifact_dir = Path(start_checkpoint_artifact.download())
-# start_epoch = start_checkpoint_artifact.metadata["epoch"]
-# vocab_size = start_checkpoint_artifact.metadata["vocab_size"]
+two_tower_project = "two-towers-marco"
+wandb.init(project=two_tower_project)
 
-# model = Word2Vec(embedding_dim=EMBED_DIM, vocab_size=vocab_size).to(device)
-# model.load_state_dict(torch.load(artifact_dir / "model.pth", weights_only=True))
+print("Pulling model")
+start_checkpoint_artifact = wandb.use_artifact("two-tower-model:latest", type="model")
+artifact_dir = Path(start_checkpoint_artifact.download())
+start_epoch = start_checkpoint_artifact.metadata["epoch"]
+vocab_size = start_checkpoint_artifact.metadata["vocab_size"]
+encoding_dim = start_checkpoint_artifact.metadata["encoding_dim"]
+embed_dim = start_checkpoint_artifact.metadata["embedding_dim"]
 
-# print("Model pulled")
+model = TwoTowers(
+    vocab_size=vocab_size, token_embed_dims=embed_dim, encoded_dim=encoding_dim
+).to(device)
 
-# optimizer = optim.Adam(model.parameters(), lr=0.005)
+model.load_state_dict(
+    torch.load(artifact_dir / "model.pth", weights_only=True, map_location=map_location)
+)
+print("Model pulled")
 
+optimizer = optim.Adam(model.parameters(), lr=0.005)
 
-# queries: list[list[int]]
+queries: list[list[int]]
+pos: list[list[int]]
+negs: list[list[int]]
 print("Loading dataset")
-dataset_path = Path("dataset/ms_marco/w2v_finetune.pkl")
+dataset_path = Path("dataset/two_tower/big.pkl")
 with open(dataset_path, "rb") as f:
     queries, pos, negs = pickle.load(f)
-
-# combined = list(zip(inputs, targets, negs))
 print("Loaded dataset")
 
-print("Tensorising dataset")
-# input_tensor = torch.tensor(data=inputs, device=device, dtype=torch.long)
-# target_tensor = torch.tensor(data=targets, device=device, dtype=torch.long)
-# negs_tensor = torch.tensor(data=negs, device=device, dtype=torch.long)
-
-dataset = torch.utils.data.Dataset(queries, pos, negs)
+dataset = TwoTowerDataset(queries, pos, negs)
 dataloader = torch.utils.data.DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 print("Dataset loader ready")
 
 
 for epoch in range(start_epoch + 1, start_epoch + 501):
-    # for chunk in tqdm(more_itertools.chunked(combined, math.ceil(len(combined) / 5))):
-    # input_tensor = torch.LongTensor(chunk[0]).to(device)
-    # target_tensor = torch.LongTensor(chunk[1]).to(device)
-    # negs_tensor = torch.LongTensor(chunk[2]).to(device)
-    # # input_tensor, target_tensor, negs_tensor = torch.load(load_path)
-
-    # dataset = torch.utils.data.TensorDataset(
-    #     input_tensor, target_tensor, negs_tensor
-    # )
-    # dataloader = torch.utils.data.DataLoader(
-    #     dataset, batch_size=BATCH_SIZE, shuffle=True
-    # )
     prgs = tqdm(dataloader, desc=f"Epoch {epoch}")
     for queries, pos, negs in prgs:
-        # inputs, targets, negs = (inputs, targets, negs)
-        loss = model.get_loss_batch(queries, pos, negs)
-        # inputs.to(device),
-        # targets.to(device),
-        # negs.to(device),
+        loss: torch.Tensor = model.get_loss_batch(queries, pos, negs)
         optimizer.zero_grad()
-
-        loss: torch.Tensor = model.get_loss(inputs, targets, negs)
-
         loss.backward()
-
         optimizer.step()
         wandb.log({"loss": loss.item()})
     if not (epoch + 1) % 5:
-        # save_path = f"checkpoints/w2v_epoch_{epoch+1}.pth"
-        checkpoint_dir = Path("artifacts/w2v-marco")
-        checkpoint_dir.mkdir(parents=True, exist_ok=True)
-        checkpoint_path = checkpoint_dir / "model.pth"
-
-        artifact = wandb.Artifact
+        checkpoint_path = Path("artifacts/two-tower-model/model.pth")
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
         torch.save(model.state_dict(), checkpoint_path)
         new_artifact = wandb.Artifact(
-            "w2v-marco",
+            "two-tower-model",
             type="model",
-            metadata={"epoch": epoch, "vocab_size": vocab_size, "embed_dim": EMBED_DIM},
+            metadata={
+                "epoch": epoch,
+                "vocab_size": vocab_size,
+                "encoding_dim": encoding_dim,
+                "embedding_dim": embed_dim,
+            },
         )
         new_artifact.add_file(checkpoint_path)
         wandb.log_artifact(new_artifact)

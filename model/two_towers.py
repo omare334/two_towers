@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 
-# from w2v_model import Word2Vec
+
+ENCODING_DIM = 100
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
