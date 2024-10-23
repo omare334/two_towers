@@ -3,7 +3,7 @@ import more_itertools
 import pickle
 import numpy as np
 from tqdm import tqdm
-from text_utils import preprocess_text
+from text_utils import preprocess_text_threshold
 import datasets
 import pathlib
 
@@ -36,7 +36,7 @@ for split in splits:
 text_corpus = " ".join(passages_corpus_list)
 # pass
 
-passages_tokens_full = tokeniser.tokenise(text_corpus)
+passages_tokens_full = tokeniser.tokenise_string(text_corpus)
 
 # Hopefully saves memory
 del text_corpus

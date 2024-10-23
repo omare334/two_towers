@@ -12,8 +12,7 @@ class Tokeniser:
         self.default_token = 0
         self.preprocess = preprocess_text
 
-    def tokenise(self, text: str, use_tqdm: bool = True) -> list[int]:
-        print(f"Preprocessing text with length {len(text)}")
+    def tokenise_string(self, text: str, use_tqdm: bool = False) -> list[int]:
         split = self.preprocess(text)
         if use_tqdm:
             tokens = [
@@ -33,7 +32,6 @@ class Tokeniser:
                 )
                 for word in split
             ]
-        print("Tokenisation done")
         return tokens
 
     # def tokenise_list_of_words(self, text: str) -> list[int]:
@@ -74,6 +72,6 @@ if __name__ == "__main__":
         "derangements occur together. In these instances, pH may not be "
         "reduced or the HCO 3 - concentration may not be low."
     )
-    tokens = tokeniser.tokenise(demo_text)
+    tokens = tokeniser.tokenise_string(demo_text)
 
     print(tokens)
