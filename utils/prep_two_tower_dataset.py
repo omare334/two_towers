@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     for split in splits:
 
-        passages = dataset[split]["passages"][:100]
+        passages = dataset[split]["passages"]
         for passage in tqdm(passages, desc=split + " passages"):
             all_documents.update(set(passage["passage_text"]))
 
@@ -30,7 +30,11 @@ if __name__ == "__main__":
 
     for split in splits:
 
-        rows = tqdm(enumerate(dataset[split]))
+        rows = tqdm(
+            enumerate(dataset[split]),
+            total=dataset[split].num_rows,
+            desc=f"Tokenising {split}",
+        )
         for row_index, row in rows:
             query_tkns = tknz(row["query"])
             pos_samples = row["passages"]["passage_text"]
@@ -43,8 +47,6 @@ if __name__ == "__main__":
                 for sample in pos_samples
             ]
             all_data.extend(data)
-            if row_index > 10:
-                break
 
     with open(DATASET_FILEPATH, "wb") as f:
         pickle.dump(all_data, f)
