@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
-from w2v_model import Word2Vec
 
-# from typing import TypeAlias
+# from w2v_model import Word2Vec
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 type Token = int
 type Sequence = list[Token]
@@ -29,7 +30,7 @@ class TwoTowers(nn.Module):
             num_layers=rnn_layer_num,
             batch_first=True,
         )
-        self.triplet_loss_single = nn.TripletMarginWithDistanceLoss(
+        self.triplet_loss = nn.TripletMarginWithDistanceLoss(
             distance_function=self.dist_function_single
         )
 
@@ -46,33 +47,44 @@ class TwoTowers(nn.Module):
         positive_tkns: list[Sequence],
         negative_tkns: list[Sequence],
     ):
-        # Expected shapes:
-        # L - length of query/doc in tokens
-        # b - number of batches
-        # s - samples per query (both pos and neg)
-        # query_tkns [b, L]
-        query_lengths = [len(seq) for seq in query_tkns]
-        padded_query_tkns = pad_sequence(query_tkns, True)
+        # Shape [N]
+        query_lengths = torch.tensor(
+            [len(seq) for seq in query_tkns], dtype=torch.long, device=device
+        )
+        pos_lengths = torch.tensor(
+            [len(seq) for seq in positive_tkns], dtype=torch.long, device=device
+        )
+        neg_lengths = torch.tensor(
+            [len(seq) for seq in negative_tkns], dtype=torch.long, device=device
+        )
 
-        pos_lengths = [len(seq) for seq in positive_tkns]
-        padded_pos_tkns = pad_sequence(positive_tkns, True)
+        # Shape [N, Lmax] (for each)
+        padded_query_tkns = pad_sequence(query_tkns, batch_first=True)
+        padded_pos_tkns = pad_sequence(positive_tkns, batch_first=True)
+        padded_neg_tkns = pad_sequence(negative_tkns, batch_first=True)
 
-        neg_lengths = [len(seq) for seq in negative_tkns]
-        padded_neg_tkns = pad_sequence(negative_tkns, True)
-
+        # Shape [N, Lmax, E]
         padded_query_embeds = self.embed(padded_query_tkns)
         padded_pos_embeds = self.embed(padded_pos_tkns)
         padded_neg_embeds = self.embed(padded_neg_tkns)
 
-        packed_query_embeds = pack_padded_sequence(
+        packed_padded_queries = pack_padded_sequence(
             padded_query_embeds, query_lengths, batch_first=True, enforce_sorted=False
         )
-        packed_pos_embeds = pack_padded_sequence(
+        packed_padded_pos = pack_padded_sequence(
             padded_pos_embeds, pos_lengths, batch_first=True, enforce_sorted=False
         )
-        packed_neg_embeds = pack_padded_sequence(
+        packed_padded_neg = pack_padded_sequence(
             padded_neg_embeds, neg_lengths, batch_first=True, enforce_sorted=False
         )
+
+        # Shape [N, Lmax, H]
+        _, query_encodings = self.query_rnn(packed_padded_queries)
+        _, pos_encodings = self.doc_rnn(packed_padded_pos)
+        _, neg_encodings = self.doc_rnn(packed_padded_neg)
+
+        # Need to convert 3 x [N,H] into [N,3,H]
+        return self.triplet_loss(query_encodings, pos_encodings, neg_encodings)
 
     def get_loss_single(
         self,
@@ -91,4 +103,25 @@ class TwoTowers(nn.Module):
         _, query_rnn_embed = self.query_rnn(query_embed)
         _, pos_rnn_embed = self.doc_rnn(pos_embed)
         _, neg_rnn_embed = self.doc_rnn(neg_embed)
-        return self.triplet_loss_single(query_rnn_embed, pos_rnn_embed, neg_rnn_embed)
+        return self.triplet_loss(query_rnn_embed, pos_rnn_embed, neg_rnn_embed)
+
+
+if __name__ == "__main__":
+    model = TwoTowers(200, 10, 20)
+
+    batch_num = 2
+
+    que_list = [
+        torch.randint(0, 200, [torch.randint(5, 15, ())]) for _ in range(batch_num)
+    ]
+    pos_list = [
+        torch.randint(0, 200, [torch.randint(5, 15, ())]) for _ in range(batch_num)
+    ]
+    neg_list = [
+        torch.randint(0, 200, [torch.randint(5, 15, ())]) for _ in range(batch_num)
+    ]
+
+    loss = model.get_loss_batch(
+        query_tkns=que_list, positive_tkns=pos_list, negative_tkns=neg_list
+    )
+    pass
