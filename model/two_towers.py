@@ -7,8 +7,12 @@ ENCODING_DIM = 100
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-type Token = int
-type Sequence = list[Token]
+from typing import TypeAlias
+
+Token: TypeAlias = int
+Sequence: TypeAlias = list[Token]
+# type Token = int
+# type Sequence = list[Token]
 
 
 class TwoTowers(nn.Module):
@@ -58,6 +62,10 @@ class TwoTowers(nn.Module):
         neg_lengths = torch.tensor(
             [len(seq) for seq in negative_tkns], dtype=torch.long, device=device
         )
+
+        query_tkns = [torch.tensor(q) for q in query_tkns]
+        positive_tkns = [torch.tensor(p) for p in positive_tkns]
+        negative_tkns = [torch.tensor(n) for n in negative_tkns]
 
         # Shape [N, Lmax] (for each)
         padded_query_tkns = pad_sequence(query_tkns, batch_first=True)
