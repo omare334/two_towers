@@ -86,7 +86,7 @@ for epoch in range(start_epoch + 1, start_epoch + 501):
         new_artifact = wandb.Artifact(
             "w2v-marco",
             type="model",
-            metadata={"epoch": 0, "vocab_size": vocab_size, "embed_dim": EMBED_DIM},
+            metadata={"epoch": epoch, "vocab_size": vocab_size, "embed_dim": EMBED_DIM},
         )
         new_artifact.add_file(checkpoint_path)
         wandb.log_artifact(new_artifact)
