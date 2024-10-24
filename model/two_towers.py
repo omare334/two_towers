@@ -23,17 +23,33 @@ class TwoTowers(nn.Module):
         )
 
         # Linear are just placeholders
-        self.query_rnn = nn.RNN(
+        # self.query_rnn = nn.RNN(
+        #     input_size=token_embed_dims,
+        #     hidden_size=encoded_dim,
+        #     num_layers=rnn_layer_num,
+        #     batch_first=True,
+        # )
+        # self.doc_rnn = nn.RNN(
+        #     input_size=token_embed_dims,
+        #     hidden_size=encoded_dim,
+        #     num_layers=rnn_layer_num,
+        #     batch_first=True,
+        # )
+        self.query_lstm = nn.LSTM(
             input_size=token_embed_dims,
             hidden_size=encoded_dim,
             num_layers=rnn_layer_num,
             batch_first=True,
+            dropout=0.1,
+            bidirectional=True,
         )
-        self.doc_rnn = nn.RNN(
+        self.doc_lstm = nn.LSTM(
             input_size=token_embed_dims,
             hidden_size=encoded_dim,
             num_layers=rnn_layer_num,
             batch_first=True,
+            dropout=0.2,
+            bidirectional=True,
         )
         self.triplet_loss = nn.TripletMarginWithDistanceLoss(
             distance_function=self.dist_function_single, reduction="mean"
@@ -91,12 +107,21 @@ class TwoTowers(nn.Module):
             padded_neg_embeds, neg_lengths, batch_first=True, enforce_sorted=False
         )
 
-        # Shape [N, Lmax, H]
-        _, query_encodings = self.query_rnn(packed_padded_queries)
-        _, pos_encodings = self.doc_rnn(packed_padded_pos)
-        _, neg_encodings = self.doc_rnn(packed_padded_neg)
+        bi_query_encodings: torch.Tensor
+        bi_pos_encodings: torch.Tensor
+        bi_neg_encodings: torch.Tensor
+        # Shape [2, N, H]
+        _, (bi_query_encodings, _) = self.query_lstm(packed_padded_queries)
+        _, (bi_pos_encodings, _) = self.doc_lstm(packed_padded_pos)
+        _, (bi_neg_encodings, _) = self.doc_lstm(packed_padded_neg)
 
-        # Need to convert 3 x [N,H] into [N,3,H]
+        batch_len = bi_query_encodings.shape[1]
+
+        # Convert to [N, 2*H]
+        query_encodings = bi_query_encodings.permute(1, 0, 2).reshape(batch_len, -1)
+        pos_encodings = bi_pos_encodings.permute(1, 0, 2).reshape(batch_len, -1)
+        neg_encodings = bi_neg_encodings.permute(1, 0, 2).reshape(batch_len, -1)
+
         return self.triplet_loss(query_encodings, pos_encodings, neg_encodings)
 
     def get_loss_single(
@@ -113,9 +138,9 @@ class TwoTowers(nn.Module):
         pos_embed = self.embed(pos_tkns)
         neg_embed = self.embed(neg_tkns)
 
-        _, query_rnn_embed = self.query_rnn(query_embed)
-        _, pos_rnn_embed = self.doc_rnn(pos_embed)
-        _, neg_rnn_embed = self.doc_rnn(neg_embed)
+        _, query_rnn_embed = self.query_lstm(query_embed)
+        _, pos_rnn_embed = self.doc_lstm(pos_embed)
+        _, neg_rnn_embed = self.doc_lstm(neg_embed)
         return self.triplet_loss(query_rnn_embed, pos_rnn_embed, neg_rnn_embed)
 
 
