@@ -54,8 +54,8 @@ def get_line_from_index(index: int):
 
 
 def process_query(query: str):
-    tokens = torch.tensor(tokeniser.tokenise_string(query), device=device)
-    query_encoding = model(tokens)
+    tokens = tokeniser.tokenise_string(query)
+    query_encoding = model.encode_query_single(tokens)
 
     top_k_indices = get_top_k_matches(query_encoding)
 

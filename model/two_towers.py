@@ -22,19 +22,6 @@ class TwoTowers(nn.Module):
             num_embeddings=vocab_size, embedding_dim=token_embed_dims
         )
 
-        # Linear are just placeholders
-        # self.query_rnn = nn.RNN(
-        #     input_size=token_embed_dims,
-        #     hidden_size=encoded_dim,
-        #     num_layers=rnn_layer_num,
-        #     batch_first=True,
-        # )
-        # self.doc_rnn = nn.RNN(
-        #     input_size=token_embed_dims,
-        #     hidden_size=encoded_dim,
-        #     num_layers=rnn_layer_num,
-        #     batch_first=True,
-        # )
         self.query_lstm = nn.LSTM(
             input_size=token_embed_dims,
             hidden_size=encoded_dim,
@@ -57,10 +44,6 @@ class TwoTowers(nn.Module):
 
     def dist_function_single(self, query, sample):
         return 1 - nn.functional.cosine_similarity(query, sample)
-
-    def shape_batch(self, query_tkns, positive_tkns: torch.Tensor, negative_tkns):
-        b, r, L = positive_tkns.shape
-        pass
 
     def get_loss_batch(
         self,
@@ -124,24 +107,55 @@ class TwoTowers(nn.Module):
 
         return self.triplet_loss(query_encodings, pos_encodings, neg_encodings)
 
-    def get_loss_single(
-        self,
-        query_tkns: list[Token],
-        pos_tkns: list[Token],
-        neg_tkns: list[Token],
-    ):
-        query_tkns = torch.LongTensor(query_tkns)
-        pos_tkns = torch.LongTensor(pos_tkns)
-        neg_tkns = torch.LongTensor(neg_tkns)
+    # Forward because model is used in app
+    def forward(self, query: list[int]):
+        return self.encode_query_single(query)
 
-        query_embed = self.embed(query_tkns)
-        pos_embed = self.embed(pos_tkns)
-        neg_embed = self.embed(neg_tkns)
+    def encode_query_single(self, query: list[int]):
+        query_tensor = torch.tensor(query, dtype=torch.long, device=device)
+        # Shape [L, E]
+        query_embed = self.embed(query_tensor)
+        # Shape [2, H]
+        query_rnn_embed: torch.Tensor
+        _, (query_rnn_embed, _) = self.query_lstm(query_embed)
+        # Shape [H]
+        return query_rnn_embed.reshape(-1)
 
-        _, query_rnn_embed = self.query_lstm(query_embed)
-        _, pos_rnn_embed = self.doc_lstm(pos_embed)
-        _, neg_rnn_embed = self.doc_lstm(neg_embed)
-        return self.triplet_loss(query_rnn_embed, pos_rnn_embed, neg_rnn_embed)
+    def encode_doc_single(self, doc: list[int]):
+        doc_tensor = torch.tensor(doc, dtype=torch.long, device=device)
+        # Shape [L, E]
+        doc_embed = self.embed(doc_tensor)
+        # Shape [2, H]
+        doc_rnn_embed: torch.Tensor
+        _, (doc_rnn_embed, _) = self.doc_lstm(doc_embed)
+        # Shape [H]
+        return doc_rnn_embed.reshape(-1)
+
+    def encode_docs(self, docs: list[list[int]]):
+        # Shape [N]
+        doc_lengths = torch.tensor([len(seq) for seq in docs], dtype=torch.long)
+
+        docs = [torch.tensor(d, dtype=torch.long, device=device) for d in docs]
+
+        # Shape [N, Lmax] (for each)
+        padded_docs = pad_sequence(docs, batch_first=True)
+
+        # Shape [N, Lmax, E]
+        padded_docs_embeds = self.embed(padded_docs)
+
+        packed_padded_docs = pack_padded_sequence(
+            padded_docs_embeds, doc_lengths, batch_first=True, enforce_sorted=False
+        )
+
+        bi_docs_encodings: torch.Tensor
+        # Shape [2, N, H]
+        _, (bi_docs_encodings, _) = self.doc_lstm(packed_padded_docs)
+
+        batch_len = bi_docs_encodings.shape[1]
+
+        # Convert to [N, 2*H]
+        docs_encodings = bi_docs_encodings.permute(1, 0, 2).reshape(batch_len, -1)
+        return docs_encodings
 
 
 if __name__ == "__main__":
