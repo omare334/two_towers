@@ -2,6 +2,8 @@ from fastapi import FastAPI, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
+from app.processor import process_query
+
 # from model.two_towers import foo
 
 app = FastAPI()
@@ -15,7 +17,7 @@ async def read_root(request: Request):
 
 @app.post("/search", response_class=HTMLResponse)
 async def search(request: Request, query: str = Form(...)):
-    results = [query for _ in range(10)]
+    results = process_query(query)
     return templates.TemplateResponse(
         "index.html", {"request": request, "results": results, "query": query}
     )
