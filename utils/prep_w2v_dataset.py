@@ -3,7 +3,7 @@ import more_itertools
 import pickle
 import numpy as np
 from tqdm import tqdm
-from text_utils import preprocess_text
+from text_utils import preprocess_text_threshold
 import datasets
 import pathlib
 
@@ -20,7 +20,7 @@ all_queries = []
 
 for split in splits:
 
-    queries = dataset[split]["query"][:1000]
+    queries = dataset[split]["query"]
 
     # TODO This is a better option
     # all_queries.extend(queries)
@@ -28,7 +28,7 @@ for split in splits:
     # No isolation of queries here
     passages_corpus_list.append(" ".join(queries))
 
-    passages = dataset[split]["passages"][:1000]
+    passages = dataset[split]["passages"]
     for passage in tqdm(passages, desc=split + " passages"):
         x = " ".join(passage["passage_text"])
         passages_corpus_list.append(" ".join(passage["passage_text"]))
@@ -36,15 +36,15 @@ for split in splits:
 text_corpus = " ".join(passages_corpus_list)
 # pass
 
-passages_tokens_full = tokeniser.tokenise(text_corpus)
+passages_tokens_full = tokeniser.tokenise_string(text_corpus)
 
 # Hopefully saves memory
 del text_corpus
 
-queries_tkns = [tokeniser.tokenise(queries) for query in tqdm(all_queries)]
+# queries_tkns = [tokeniser.tokenise(query) for query in tqdm(all_queries)]
 
 passages_token_counts = collections.Counter(passages_tokens_full)
-passages_token_len = len(passages_tokens_full)
+passages_tokens_len = len(passages_tokens_full)
 
 
 # Subsample corpus
@@ -64,7 +64,7 @@ def subsample_corpus(corpus_tokens, threshold, tokens_len):
 
 # print("Saubsampling...")
 passages_tokens_subsampled = subsample_corpus(
-    corpus_tokens=passages_tokens_full, threshold=1e-5, tokens_len=passages_token_len
+    corpus_tokens=passages_tokens_full, threshold=1e-5, tokens_len=passages_tokens_len
 )
 # print("Finished subsampling")
 
@@ -88,8 +88,8 @@ for tkn_wind in wind_tq:
     targets.append(tkn_wind[:center_i] + tkn_wind[center_i + 1 :])
     # TODO
     negs = [
-        tokeniser.words_to_ids[passages_tokens_full[id]]
-        for id in np.random.randint(0, passages_token_len, neg_sample_count)
+        passages_tokens_full[id]
+        for id in np.random.randint(0, passages_tokens_len, neg_sample_count)
     ]
     neg_samples.append(negs)
 

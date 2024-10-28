@@ -2,7 +2,7 @@ import pickle
 import datasets
 from collections import Counter
 from tqdm import tqdm
-from text_utils import preprocess_text, NEW_COUNT_THRESHOLD
+from text_utils import preprocess_text_threshold, NEW_COUNT_THRESHOLD
 
 
 words_to_ids: dict[str, int] = {}
@@ -20,10 +20,10 @@ if __name__ == "__main__":
 
     for split in splits:
 
-        queries = dataset[split]["query"][:1000]
+        queries = dataset[split]["query"]
         text_corpus_list.append(" ".join(queries))
 
-        passages = dataset[split]["passages"][:1000]
+        passages = dataset[split]["passages"]
         for passage in tqdm(passages, desc=split + " passages"):
             x = " ".join(passage["passage_text"])
             text_corpus_list.append(" ".join(passage["passage_text"]))
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     text_corpus = " ".join(text_corpus_list)
     # pass
     print("Processing text")
-    words = preprocess_text(text_corpus)
+    words = preprocess_text_threshold(text_corpus)
 
     print("Counting words")
     word_counts = Counter(words)
